@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "HLTV Pirate Flag Swap",
-  "version": "1.2.0",
-  "description": "Replaces Russian flags on hltv.org with a pirate flag",
+  "name": "HLTV No Ru Flag",
+  "version": "1.3.0",
+  "description": "Replaces Russian flag on hltv.org with a pirate flag",
+  "icons": {
+    "128": "icon128.png"
+  },
   "content_scripts": [
     {
       "matches": ["*://*.hltv.org/*"],
