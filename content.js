@@ -1,11 +1,41 @@
-// Resolve packaged image for CSS & <img> swaps
-const PIRATE_URL = chrome.runtime.getURL('pirate.png');
-const MARK = 'pirateFlagSwapped';
+const FLAG_TYPES = {
+  pirate: 'flags/pirate.png',
+  neutral: 'flags/neutral-flag.png',
+  blue: 'flags/blue-flag.png',
+};
+
+const DEFAULT_FLAG = 'neutral';
+const MARK = 'flagSwapped';
+
+function getCurrentFlagUrl() {
+  return chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG]);
+}
+
+async function updateFlagUrl() {
+  try {
+    const result = await chrome.storage.sync.get(['selectedFlag']);
+    const selectedFlag = result.selectedFlag || DEFAULT_FLAG;
+    const flagUrl = chrome.runtime.getURL(FLAG_TYPES[selectedFlag]);
+
+    const style = document.querySelector('#flag-style');
+    if (style) {
+      style.textContent = `:root{--replacement-flag: url("${flagUrl}") !important;}`;
+    }
+
+    return flagUrl;
+  } catch (error) {
+    console.error('Error loading flag preference:', error);
+    return getCurrentFlagUrl();
+  }
+}
 
 (function injectCSSVar() {
   const style = document.createElement('style');
-  style.textContent = `:root{--pirate-flag: url("${PIRATE_URL}") !important;}`;
+  style.id = 'flag-style';
+  style.textContent = `:root{--replacement-flag: url("${getCurrentFlagUrl()}") !important;}`;
   document.documentElement.appendChild(style);
+
+  updateFlagUrl();
 })();
 
 const RUSSIA_PATTERNS = {
@@ -32,17 +62,17 @@ function isRussiaImg(img) {
   return false;
 }
 
-function swapImg(img) {
+async function swapImg(img) {
   if (img.dataset[MARK]) return;
   img.dataset[MARK] = '1';
 
-  // If it looks like a standard small flag, force 18x12. Otherwise, preserve size.
   const cs = getComputedStyle(img);
   const w = parseInt(cs.width) || img.width || img.naturalWidth || 18;
   const h = parseInt(cs.height) || img.height || img.naturalHeight || 12;
   const smallFlag = w <= 24 && h <= 16;
 
-  img.src = PIRATE_URL;
+  const flagUrl = await updateFlagUrl();
+  img.src = flagUrl;
   img.removeAttribute('srcset');
   img.removeAttribute('data-src');
 
@@ -54,8 +84,8 @@ function swapImg(img) {
     img.style.height = h + 'px';
   }
 
-  img.alt = 'Pirate flag';
-  img.title = 'Pirate flag';
+  img.alt = 'Replacement flag';
+  img.title = 'Replacement flag';
 }
 
 function looksLikeRussiaFlagElement(el) {
@@ -75,56 +105,62 @@ function looksLikeRussiaFlagElement(el) {
   return false;
 }
 
-function swapBackground(el) {
+async function swapBackground(el) {
   if (el.dataset[MARK]) return;
   el.dataset[MARK] = '1';
 
-  // Size to exact 18x12 in case container had sprite sizing
+  const flagUrl = await updateFlagUrl();
+
   el.style.setProperty('width', '18px', 'important');
   el.style.setProperty('height', '12px', 'important');
-  el.style.setProperty('background-image', `url("${PIRATE_URL}")`, 'important');
+  el.style.setProperty('background-image', `url("${flagUrl}")`, 'important');
   el.style.setProperty('background-position', 'center', 'important');
   el.style.setProperty('background-repeat', 'no-repeat', 'important');
   el.style.setProperty('background-size', '18px 12px', 'important');
   el.style.display = 'inline-block';
 }
 
-function processNode(node) {
+async function processNode(node) {
   if (!(node instanceof Element)) return;
 
   if (node.tagName === 'IMG') {
-    if (isRussiaImg(node)) swapImg(node);
+    if (isRussiaImg(node)) await swapImg(node);
   } else if (looksLikeRussiaFlagElement(node)) {
-    swapBackground(node);
+    await swapBackground(node);
   }
 
-  node.querySelectorAll('img').forEach((img) => {
-    if (isRussiaImg(img)) swapImg(img);
-  });
+  const imgPromises = Array.from(node.querySelectorAll('img')).map(
+    async (img) => {
+      if (isRussiaImg(img)) await swapImg(img);
+    }
+  );
+  await Promise.all(imgPromises);
 
-  node
-    .querySelectorAll(
+  const backgroundPromises = Array.from(
+    node.querySelectorAll(
       '[class*="flag"], [data-country], [data-nation], [aria-label], [title]'
     )
-    .forEach((el) => {
-      if (looksLikeRussiaFlagElement(el)) swapBackground(el);
-    });
+  ).map(async (el) => {
+    if (looksLikeRussiaFlagElement(el)) await swapBackground(el);
+  });
+  await Promise.all(backgroundPromises);
 }
 
 (function start() {
-  const kick = () => processNode(document.documentElement);
+  const kick = async () => await processNode(document.documentElement);
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', kick, { once: true });
   } else {
     kick();
   }
 
-  const observer = new MutationObserver((muts) => {
+  const observer = new MutationObserver(async (muts) => {
     for (const m of muts) {
       if (m.type === 'childList') {
-        m.addedNodes.forEach(processNode);
+        const promises = Array.from(m.addedNodes).map(processNode);
+        await Promise.all(promises);
       } else if (m.type === 'attributes' && m.target instanceof Element) {
-        processNode(m.target);
+        await processNode(m.target);
       }
     }
   });
@@ -143,5 +179,19 @@ function processNode(node) {
       'data-country',
       'data-nation',
     ],
+  });
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateFlag') {
+      document.querySelectorAll(`[data-${MARK}]`).forEach((el) => {
+        delete el.dataset[MARK];
+      });
+
+      updateFlagUrl().then(() => {
+        processNode(document.documentElement);
+      });
+
+      sendResponse({ success: true });
+    }
   });
 })();

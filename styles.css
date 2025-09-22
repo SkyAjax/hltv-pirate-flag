@@ -1,9 +1,7 @@
-/* We fill --pirate-flag from content.js so we can use the packaged PNG. */
 :root {
-  --pirate-flag: none;
+  --replacement-flag: none;
 }
 
-/* Common HLTV flag containers */
 .flag.ru,
 .flag-ru,
 .country-ru,
@@ -16,13 +14,12 @@
   display: inline-block !important;
   width: 18px !important;
   height: 12px !important;
-  background-image: var(--pirate-flag) !important;
+  background-image: var(--replacement-flag) !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  background-size: 18px 12px !important; /* exact */
+  background-size: 18px 12px !important;
 }
 
-/* If the site paints the flag via ::before (sprite), replace that too */
 .flag.ru::before,
 .flag-ru::before,
 [class*='flag'][class*=' ru']::before,
@@ -35,13 +32,12 @@
   display: inline-block !important;
   width: 18px !important;
   height: 12px !important;
-  background-image: var(--pirate-flag) !important;
+  background-image: var(--replacement-flag) !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  background-size: 18px 12px !important; /* exact */
+  background-size: 18px 12px !important;
 }
 
-/* If a flag container nests an <img>, hide it — JS will swap those anyway */
 .flag.ru > img,
 .flag-ru > img {
   display: none !important;

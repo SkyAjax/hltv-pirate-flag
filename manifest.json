@@ -1,11 +1,16 @@
 {
   "manifest_version": 3,
   "name": "HLTV No Ru Flag",
-  "version": "1.3.0",
-  "description": "Replaces Russian flag on hltv.org with a pirate flag",
+  "version": "1.4.0",
+  "description": "Replaces Russian flag on hltv.org with your choice of alternative flags",
   "icons": {
     "128": "icon128.png"
   },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Choose Flag Style"
+  },
+  "permissions": ["storage", "activeTab"],
   "content_scripts": [
     {
       "matches": ["*://*.hltv.org/*"],
@@ -16,7 +21,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["pirate.png"],
+      "resources": ["flags/*.png"],
       "matches": ["*://*.hltv.org/*"]
     }
   ]
