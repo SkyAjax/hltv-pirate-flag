@@ -38,7 +38,7 @@ function handleFlagSelection(event) {
   saveFlagPreference(selectedFlag);
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0] && tabs[0].url.includes('hltv.org')) {
+    if (tabs[0] && tabs[0].url && tabs[0].url.includes('hltv.org')) {
       chrome.tabs.sendMessage(tabs[0].id, {
         action: 'updateFlag',
         flagType: selectedFlag,
