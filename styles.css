@@ -1,9 +1,9 @@
-/* Pirate flag as data URL (simple skull & crossbones) */
+/* We fill --pirate-flag from content.js so we can use the packaged PNG. */
 :root {
-  --pirate-flag: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%23000'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='320' cy='200' r='80'/%3E%3Ccircle cx='290' cy='185' r='12'/%3E%3Ccircle cx='350' cy='185' r='12'/%3E%3Crect x='290' y='220' width='60' height='18' rx='9'/%3E%3Cg transform='translate(320,350) rotate(25)'%3E%3Crect x='-200' y='-12' width='400' height='24' rx='12'/%3E%3C/g%3E%3Cg transform='translate(320,350) rotate(-25)'%3E%3Crect x='-200' y='-12' width='400' height='24' rx='12'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --pirate-flag: none;
 }
 
-/* 1) Direct class/attribute hits frequently seen on HLTV */
+/* Common HLTV flag containers */
 .flag.ru,
 .flag-ru,
 .country-ru,
@@ -13,13 +13,16 @@
 [data-nation='ru' i],
 [aria-label*='Russia' i],
 [title*='Russia' i] {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 12px !important;
   background-image: var(--pirate-flag) !important;
   background-position: center !important;
-  background-size: contain !important;
   background-repeat: no-repeat !important;
+  background-size: 18px 12px !important; /* exact */
 }
 
-/* 2) If HLTV draws flags in ::before/::after pseudo elements */
+/* If the site paints the flag via ::before (sprite), replace that too */
 .flag.ru::before,
 .flag-ru::before,
 [class*='flag'][class*=' ru']::before,
@@ -29,26 +32,17 @@
 [aria-label*='Russia' i]::before,
 [title*='Russia' i]::before {
   content: '' !important;
+  display: inline-block !important;
+  width: 18px !important;
+  height: 12px !important;
   background-image: var(--pirate-flag) !important;
   background-position: center !important;
-  background-size: contain !important;
   background-repeat: no-repeat !important;
+  background-size: 18px 12px !important; /* exact */
 }
 
-/* 3) Make sure typical flag boxes still show something even if size was from a sprite */
-.flag.ru,
-.flag-ru,
-[class*='flag'][class*=' ru'],
-[class*='flag-ru'],
-[data-country='ru' i],
-[data-nation='ru' i] {
-  display: inline-block !important;
-  min-width: 16px;
-  min-height: 11px;
-}
-
-/* 4) If they use a dedicated inner node for the bitmap */
+/* If a flag container nests an <img>, hide it — JS will swap those anyway */
 .flag.ru > img,
 .flag-ru > img {
-  display: none !important; /* JS will handle <img> replacement separately if needed */
+  display: none !important;
 }
