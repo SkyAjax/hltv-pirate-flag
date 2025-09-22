@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "HLTV Pirate Flag Swap",
+  "version": "1.1.0",
+  "description": "Replaces Russian flags on hltv.org with a pirate flag (sprite + <img> support).",
+  "content_scripts": [
+    {
+      "matches": ["*://*.hltv.org/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_start"
+    }
+  ]
+}
