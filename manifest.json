@@ -10,7 +10,7 @@
     "default_popup": "popup.html",
     "default_title": "Choose Flag Style"
   },
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["*://*.hltv.org/*"],
@@ -20,9 +20,6 @@
     }
   ],
   "web_accessible_resources": [
-    {
-      "resources": ["flags/*.png"],
-      "matches": ["*://*.hltv.org/*"]
-    }
+    { "resources": ["flags/*.png"], "matches": ["*://*.hltv.org/*"] }
   ]
 }
