@@ -95,6 +95,9 @@ function shouldUseWhiteFlag(element = null) {
   return false;
 }
 
+let CURRENT_FLAG_URL = null;
+let CURRENT_SELECTED_FLAG = null;
+
 async function updateFlagUrl() {
   try {
     const result = await chrome.storage.sync.get(['selectedFlag']);
@@ -106,10 +109,13 @@ async function updateFlagUrl() {
       style.textContent = `:root{--replacement-flag: url("${flagUrl}") !important;}`;
     }
 
-    return flagUrl;
+    CURRENT_FLAG_URL = flagUrl;
+    CURRENT_SELECTED_FLAG = selectedFlag;
+    return CURRENT_FLAG_URL;
   } catch (error) {
     console.error('Error loading flag preference:', error);
-    return getCurrentFlagUrl();
+    CURRENT_FLAG_URL = getCurrentFlagUrl();
+    return CURRENT_FLAG_URL;
   }
 }
 
@@ -162,7 +168,7 @@ async function swapImg(img) {
   const useWhiteFlag = shouldUseWhiteFlag(img);
   const flagUrl = useWhiteFlag
     ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
-    : await updateFlagUrl();
+    : CURRENT_FLAG_URL || (await updateFlagUrl());
   img.src = flagUrl;
   img.removeAttribute('srcset');
   img.removeAttribute('data-src');
@@ -207,7 +213,7 @@ async function swapBackground(el) {
   const useWhiteFlag = shouldUseWhiteFlag(el);
   const flagUrl = useWhiteFlag
     ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
-    : await updateFlagUrl();
+    : CURRENT_FLAG_URL || (await updateFlagUrl());
 
   const isMatchPageTeamFlag =
     (el.classList.contains('team1') || el.classList.contains('team2')) &&
@@ -255,7 +261,22 @@ async function processNode(node) {
 }
 
 (function start() {
-  const kick = async () => await processNode(document.documentElement);
+  const reprocessAll = async () => {
+    document.querySelectorAll(`[data-${MARK}]`).forEach((el) => {
+      delete el.dataset[MARK];
+    });
+    await updateFlagUrl();
+    await processNode(document.documentElement);
+  };
+
+  const kick = async () => {
+    await updateFlagUrl();
+    await processNode(document.documentElement);
+    // Staggered retries to catch late content
+    setTimeout(reprocessAll, 200);
+    setTimeout(reprocessAll, 1000);
+    setTimeout(reprocessAll, 3000);
+  };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', kick, { once: true });
   } else {
@@ -283,7 +304,6 @@ async function processNode(node) {
       'srcset',
       'title',
       'aria-label',
-      'style',
       'data-country',
       'data-nation',
     ],
@@ -291,15 +311,30 @@ async function processNode(node) {
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'updateFlag') {
-      document.querySelectorAll(`[data-${MARK}]`).forEach((el) => {
-        delete el.dataset[MARK];
-      });
-
-      updateFlagUrl().then(() => {
-        processNode(document.documentElement);
-      });
+      reprocessAll();
 
       sendResponse({ success: true });
+    }
+  });
+
+  // Re-run when storage changes (e.g., user switches flag in popup)
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.selectedFlag) {
+      reprocessAll();
+    }
+  });
+
+  // Handle bfcache restores and SPA navigations that reuse DOM
+  window.addEventListener('pageshow', (ev) => {
+    if (ev.persisted) {
+      reprocessAll();
+    }
+  });
+
+  // When tab becomes visible again, reprocess in case content updated offscreen
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      reprocessAll();
     }
   });
 })();
