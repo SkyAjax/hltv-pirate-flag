@@ -7,8 +7,92 @@ const FLAG_TYPES = {
 const DEFAULT_FLAG = 'neutral';
 const MARK = 'flagSwapped';
 
+// Players/coaches who should always get white flag
+const WHITE_FLAG_EXCLUSIONS = [
+  '22458/maddened', // coach
+  '14055/propleh', // player
+  '20430/alpha', // player
+  '25412/pradiggg', // coach
+  '16324/iksou', // coach
+  '8660/sl4m', // player
+  '7402/lk', // player
+];
+
 function getCurrentFlagUrl() {
   return chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG]);
+}
+
+function shouldUseWhiteFlag(element = null) {
+  // Check current page URL first
+  const currentUrl = window.location.href;
+  if (
+    WHITE_FLAG_EXCLUSIONS.some((exclusion) => currentUrl.includes(exclusion))
+  ) {
+    return true;
+  }
+
+  // If element is provided, check its context for player/coach links
+  if (element) {
+    // Look for player/coach links in the element's context
+    const playerLink =
+      element.closest('a[href*="/player/"]') ||
+      element.closest('a[href*="/coach/"]') ||
+      element.querySelector('a[href*="/player/"]') ||
+      element.querySelector('a[href*="/coach/"]');
+
+    if (playerLink) {
+      const href = playerLink.getAttribute('href');
+      return WHITE_FLAG_EXCLUSIONS.some((exclusion) =>
+        href.includes(exclusion)
+      );
+    }
+
+    // Check if the element itself is a player/coach link
+    if (element.tagName === 'A') {
+      const href = element.getAttribute('href');
+      if (href && (href.includes('/player/') || href.includes('/coach/'))) {
+        return WHITE_FLAG_EXCLUSIONS.some((exclusion) =>
+          href.includes(exclusion)
+        );
+      }
+    }
+
+    // Check for sibling player/coach links (common pattern in news blocks)
+    // Only apply white flag if THIS specific flag is associated with an excluded player
+    const parent = element.parentElement;
+    if (parent) {
+      // Look for the next sibling link after this flag
+      let nextSibling = element.nextSibling;
+      while (nextSibling) {
+        if (nextSibling.nodeType === Node.ELEMENT_NODE) {
+          if (nextSibling.tagName === 'A') {
+            const href = nextSibling.getAttribute('href');
+            if (
+              href &&
+              (href.includes('/player/') || href.includes('/coach/'))
+            ) {
+              return WHITE_FLAG_EXCLUSIONS.some((exclusion) =>
+                href.includes(exclusion)
+              );
+            }
+          }
+          // If we hit a text node or other element, check if it contains links
+          const links = nextSibling.querySelectorAll(
+            'a[href*="/player/"], a[href*="/coach/"]'
+          );
+          if (links.length > 0) {
+            const href = links[0].getAttribute('href');
+            return WHITE_FLAG_EXCLUSIONS.some((exclusion) =>
+              href.includes(exclusion)
+            );
+          }
+        }
+        nextSibling = nextSibling.nextSibling;
+      }
+    }
+  }
+
+  return false;
 }
 
 async function updateFlagUrl() {
@@ -69,14 +153,24 @@ async function swapImg(img) {
   const cs = getComputedStyle(img);
   const w = parseInt(cs.width) || img.width || img.naturalWidth || 18;
   const h = parseInt(cs.height) || img.height || img.naturalHeight || 12;
+  const isMatchPageTeamFlag =
+    (img.classList.contains('team1') || img.classList.contains('team2')) &&
+    !!img.closest('.standard-box.teamsBox');
   const smallFlag = w <= 24 && h <= 16;
 
-  const flagUrl = await updateFlagUrl();
+  // Check if this specific flag should use white flag
+  const useWhiteFlag = shouldUseWhiteFlag(img);
+  const flagUrl = useWhiteFlag
+    ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
+    : await updateFlagUrl();
   img.src = flagUrl;
   img.removeAttribute('srcset');
   img.removeAttribute('data-src');
 
-  if (smallFlag) {
+  if (isMatchPageTeamFlag) {
+    img.style.width = '300px';
+    img.style.height = '200px';
+  } else if (smallFlag) {
     img.style.width = '18px';
     img.style.height = '12px';
   } else {
@@ -109,14 +203,28 @@ async function swapBackground(el) {
   if (el.dataset[MARK]) return;
   el.dataset[MARK] = '1';
 
-  const flagUrl = await updateFlagUrl();
+  // Check if this specific flag should use white flag
+  const useWhiteFlag = shouldUseWhiteFlag(el);
+  const flagUrl = useWhiteFlag
+    ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
+    : await updateFlagUrl();
 
-  el.style.setProperty('width', '18px', 'important');
-  el.style.setProperty('height', '12px', 'important');
+  const isMatchPageTeamFlag =
+    (el.classList.contains('team1') || el.classList.contains('team2')) &&
+    !!el.closest('.standard-box.teamsBox');
+  const widthPx = isMatchPageTeamFlag ? '30px' : '18px';
+  const heightPx = isMatchPageTeamFlag ? '20px' : '12px';
+
+  el.style.setProperty('width', widthPx, 'important');
+  el.style.setProperty('height', heightPx, 'important');
   el.style.setProperty('background-image', `url("${flagUrl}")`, 'important');
   el.style.setProperty('background-position', 'center', 'important');
   el.style.setProperty('background-repeat', 'no-repeat', 'important');
-  el.style.setProperty('background-size', '18px 12px', 'important');
+  el.style.setProperty(
+    'background-size',
+    `${widthPx} ${heightPx}`,
+    'important'
+  );
   el.style.display = 'inline-block';
 }
 
