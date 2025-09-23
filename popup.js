@@ -2,7 +2,7 @@ const DEFAULT_FLAG = 'neutral';
 
 async function loadSavedPreference() {
   try {
-    const result = await chrome.storage.sync.get(['selectedFlag']);
+    const result = await browserAPI.storage.sync.get(['selectedFlag']);
     const selectedFlag = result.selectedFlag || DEFAULT_FLAG;
 
     document.querySelectorAll('.flag-option').forEach((option) => {
@@ -19,7 +19,7 @@ async function loadSavedPreference() {
 
 async function saveFlagPreference(flagType) {
   try {
-    await chrome.storage.sync.set({ selectedFlag: flagType });
+    await browserAPI.storage.sync.set({ selectedFlag: flagType });
     console.log('Flag preference saved:', flagType);
   } catch (error) {
     console.error('Error saving preference:', error);
@@ -37,9 +37,9 @@ function handleFlagSelection(event) {
 
   saveFlagPreference(selectedFlag);
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  browserAPI.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0] && tabs[0].url && tabs[0].url.includes('hltv.org')) {
-      chrome.tabs.sendMessage(tabs[0].id, {
+      browserAPI.tabs.sendMessage(tabs[0].id, {
         action: 'updateFlag',
         flagType: selectedFlag,
       });

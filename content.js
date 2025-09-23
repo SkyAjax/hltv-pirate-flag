@@ -19,7 +19,7 @@ const WHITE_FLAG_EXCLUSIONS = [
 ];
 
 function getCurrentFlagUrl() {
-  return chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG]);
+  return browserAPI.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG]);
 }
 
 function shouldUseWhiteFlag(element = null) {
@@ -97,9 +97,9 @@ function shouldUseWhiteFlag(element = null) {
 
 async function updateFlagUrl() {
   try {
-    const result = await chrome.storage.sync.get(['selectedFlag']);
+    const result = await browserAPI.storage.sync.get(['selectedFlag']);
     const selectedFlag = result.selectedFlag || DEFAULT_FLAG;
-    const flagUrl = chrome.runtime.getURL(FLAG_TYPES[selectedFlag]);
+    const flagUrl = browserAPI.runtime.getURL(FLAG_TYPES[selectedFlag]);
 
     const style = document.querySelector('#flag-style');
     if (style) {
@@ -161,7 +161,7 @@ async function swapImg(img) {
   // Check if this specific flag should use white flag
   const useWhiteFlag = shouldUseWhiteFlag(img);
   const flagUrl = useWhiteFlag
-    ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
+    ? browserAPI.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
     : await updateFlagUrl();
   img.src = flagUrl;
   img.removeAttribute('srcset');
@@ -206,7 +206,7 @@ async function swapBackground(el) {
   // Check if this specific flag should use white flag
   const useWhiteFlag = shouldUseWhiteFlag(el);
   const flagUrl = useWhiteFlag
-    ? chrome.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
+    ? browserAPI.runtime.getURL(FLAG_TYPES[DEFAULT_FLAG])
     : await updateFlagUrl();
 
   const isMatchPageTeamFlag =
@@ -289,7 +289,7 @@ async function processNode(node) {
     ],
   });
 
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'updateFlag') {
       document.querySelectorAll(`[data-${MARK}]`).forEach((el) => {
         delete el.dataset[MARK];

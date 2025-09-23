@@ -4,16 +4,16 @@
 
 ## Overview
 
-This privacy policy describes how the "HLTV No Russian Flags" Chrome extension (the "Extension") handles information when you use it. We are committed to protecting your privacy and being transparent about our data practices.
+This privacy policy describes how the "HLTV No Russian Flags" browser extension (the "Extension") handles information when you use it. The extension is compatible with Chrome, Firefox, and other Chromium-based browsers. We are committed to protecting your privacy and being transparent about our data practices.
 
 ## Information We Collect
 
 ### Data Stored Locally
 
-The Extension stores the following information locally on your device using Chrome's storage API:
+The Extension stores the following information locally on your device using the browser's storage API:
 
 - **Flag Preference**: Your choice of replacement flag (pirate, neutral, or blue flag)
-- This preference is stored using Chrome's `chrome.storage.sync` API
+- This preference is stored using the browser's storage API (`chrome.storage.sync` in Chrome/Chromium browsers, `browser.storage.sync` in Firefox)
 
 ### No Personal Data Collection
 
@@ -36,10 +36,10 @@ The Extension uses the stored flag preference solely to:
 
 ## Data Storage and Security
 
-- All data is stored locally on your device using Chrome's secure storage APIs
+- All data is stored locally on your device using the browser's secure storage APIs
 - No data is transmitted to external servers or third parties
-- Data is stored in Chrome's synchronized storage, which means it may be synced across your Chrome browsers if you have sync enabled
-- You can delete this data at any time by uninstalling the extension or clearing Chrome's extension storage
+- Data is stored in the browser's synchronized storage, which means it may be synced across your browsers if you have sync enabled
+- You can delete this data at any time by uninstalling the extension or clearing the browser's extension storage
 
 ## Third-Party Services
 
@@ -84,6 +84,7 @@ If you have any questions about this privacy policy or the Extension's data prac
 This Extension complies with:
 
 - Chrome Web Store Developer Program Policies
+- Mozilla Add-ons Policies
 - General Data Protection Regulation (GDPR) principles
 - California Consumer Privacy Act (CCPA) requirements
 

@@ -14,12 +14,18 @@
   "content_scripts": [
     {
       "matches": ["*://*.hltv.org/*"],
-      "js": ["content.js"],
+      "js": ["browser-compat.js", "content.js"],
       "css": ["styles.css"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     { "resources": ["flags/*.png"], "matches": ["*://*.hltv.org/*"] }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "hltv-no-ru-flag@sergeiruban.com",
+      "strict_min_version": "109.0"
+    }
+  }
 }
