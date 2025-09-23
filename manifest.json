@@ -1,7 +1,7 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 5,
   "name": "HLTV No Ru Flag",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Replaces Russian flag on hltv.org with your choice of alternative flags",
   "icons": {
     "128": "icon128.png"
